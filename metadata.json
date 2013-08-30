@@ -1,0 +1,6 @@
+{
+ "uuid": "sound(App Volume Control)@cinnamon.org",
+ "name": "Sound(App Volume Control)",
+ "description": "Cinnamon sound applet with per Application Volume Control",
+ "icon": "stock_volume"
+}
