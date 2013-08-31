@@ -846,14 +846,32 @@ AppControl.prototype = {
     _init: function(app, maxVol, theme) {
         this.app = app;
         this.maxVol = maxVol;
+        global.log("Connecting notify::is-muted to updateMute");
         this.muteId = app.connect("notify::is-muted", Lang.bind(this, this.updateMute));
+        global.log("Connected notify::is-muted to updateMute");
+        global.log("Connecting notify::volume to updateVolume");
         this.volumeId = app.connect("notify::volume", Lang.bind(this, this.updateVolume));
+        global.log("Connected notify::volume to updateVolume");
 
+        global.log("Creating mute switch")
+        this.mute_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute " + this.app.get_name()), false);
+        global.log("Created mute switch")
+        global.log("Connecting mute_switch.toggled to toggleMute")
+        this.mute_switch.connect('toggled', Lang.bind(this, this.toggleMute));
+        global.log("Connected mute_switch.toggled to toggleMute")
+        global.log("Creating app.icon")
         this.icon = new St.Icon({ icon_name: app.icon_name, icon_type: St.IconType.FULLCOLOR});
+        global.log("Created app.icon")
+        global.log("Creating title")
         this.title = new ImageTextImageMenuItem(this.icon, _(app.get_name()), "audio-volume-high", "right", "sound-volume-menu-item");
+        global.log("Created title")
 
+        global.log("Creating slider")
         this.slider = new PopupMenu.PopupSliderMenuItem(0);
+        global.log("Created slider")
+        global.log("Connecting slider.value-changed to sliderChanged")
         this.slider.connect('value-changed', Lang.bind(this, this.sliderChanged));
+        global.log("Connected slider.value-changed to sliderChanged")
         //this.slider.connect('drag-end', Lang.bind(this, this._notifyVolumeChange));
         this.updateVolume();
 
@@ -892,17 +910,22 @@ AppControl.prototype = {
             this.title.setIcon('audio-volume-muted');
             this.title.setText(_(this.app.get_name()) + ": 0%");
             this.slider.setValue(0);
-            //FIX ME: add mute switch
+            this.mute_switch.setToggleState(true);
         } else {
             this.title.setIcon(this._volumeToIcon(this.app.volume));
             this.title.setText(_(this.app.get_name())+ ": " + Math.floor(this.volume * 100) + "%");
-            //FIX ME: add mute switch
+            this.mute_switch.setToggleState(false);
         }
     },
 
     toggleMute: function() {
-        if ( this.app.is_muted ) this.app.change_is_muted(false);
-        else this.app.change_is_muted(true);
+        if ( this.app.is_muted ) {
+            this.app.change_is_muted(false);
+            this.mute_switch.setToggleState(false);
+        } else {
+            this.app.change_is_muted(true);
+            this.mute_switch.setToggleState(true);
+        }
     },
 
     sliderChanged: function(slider, value) {
@@ -922,6 +945,7 @@ AppControl.prototype = {
     destroy: function() {
         this.slider.destroy();
         this.title.destroy();
+        this.mute_switch.destroy();
         this.icon.destroy();
         this.app.disconnect(this.muteId);
         this.app.disconnect(this.volumeId);
@@ -1365,11 +1389,22 @@ MyApplet.prototype = {
         let streams = this._control.get_sink_inputs();
         for ( let i = 0; i < streams.length; i++ ) {
             let output = streams[i]
+            let appName = output.get_name();
+            global.log("Stream: " + appName)
             if ( output.get_application_id() != "org.Cinnamon" ) {
+                global.log("Creating App controller for " + appName );
                 let app = new AppControl(output, this._control.get_vol_max_norm(), "");
+                global.log("App controller for " + appName + "created");
                 //this._perAppVolumeControl.menu.addActor(app.label, { expand: false });
+                global.log("Adding mute switch for " + appName );
+                this._applet_context_menu.addMenuItem(app.mute_switch);
+                global.log("Added mute switch for " + appName );
+                global.log("Adding label for " + appName );
                 this._perAppVolumeControl.menu.addMenuItem(app.title);
+                global.log("Added label for " + appName );
+                global.log("Adding slider for " + appName );
                 this._perAppVolumeControl.menu.addMenuItem(app.slider);
+                global.log("Added slider for " + appName );
                 this._apps.push(app);
             }
         }
