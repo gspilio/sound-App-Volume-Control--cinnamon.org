@@ -854,7 +854,11 @@ AppControl.prototype = {
         global.log("Connected notify::volume to updateVolume");
 
         global.log("Creating mute switch")
-        this.mute_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute " + this.app.get_name()), false);
+        if (this.app.is_muted) {
+            this.mute_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute " + this.app.get_name()), true);
+        } else {
+            this.mute_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute " + this.app.get_name()), false);
+        }
         global.log("Created mute switch")
         global.log("Connecting mute_switch.toggled to toggleMute")
         this.mute_switch.connect('toggled', Lang.bind(this, this.toggleMute));
